@@ -1,0 +1,59 @@
+version: '2'
+messages:
+  $i18n: locales.yml
+template:
+  name:
+    $ref: "#/messages/template.name"
+  description:
+    $ref: "#/messages/template.description"
+  header: '![](toolchain.svg?localize)'
+  icon: secure-lock-kubernetes.svg
+  required:
+    - ch07-app-build
+    - ch07-app-repo
+  info:
+    git url: >-
+      [https://github.com/43books/ch07-toolchain](https://github.com/43books/ch07-toolchain)
+    git branch: >-
+      [master](https://github.com/43books/ch07-toolchain/tree/master)
+toolchain:
+  name: 'ch07-toolchain-{{timestamp}}'
+  template:
+    getting_started:
+      $ref: "#/messages/template.gettingStarted" 
+services:
+  ch07-app-repo:
+    service_id: hostedgit
+    parameters:
+      repo_name: 'ch07-app-{{timestamp}}'
+      repo_url: 'https://github.com/43books/ch07-app'
+      type: clone
+      has_issues: true
+      enable_traceability: true
+  ch07-app-build:
+    service_id: pipeline
+    parameters:
+      services:
+        - ch07-app-repo
+      name: 'ch07-app-{{timestamp}}'
+      ui-pipeline: true
+      configuration:
+        content:
+          $text: pipeline.yml
+        env:
+          GIT_REPO: ch07-app-repo
+          CF_APP_NAME: '{{form.pipeline.parameters.app-name}}'
+          PROD_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
+          REGISTRY_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
+          REGISTRY_NAMESPACE: '{{form.pipeline.parameters.registry-namespace}}'
+          PROD_CLUSTER_NAME: '{{form.pipeline.parameters.prod-cluster-name}}'
+          API_KEY: '{{form.pipeline.parameters.api-key}}'
+        execute: true
+  webide:
+    service_id: orion
+form:
+  pipeline:
+    parameters:
+      app-name: '{{services.ch07-app-repo.parameters.repo_name}}'
+    schema:
+      $ref: deploy.json
